@@ -1,0 +1,62 @@
+library(shiny)
+library(ggplot2)
+library(stringr)
+library(shinyWidgets)
+library(plotly)
+library(bslib)
+library(treemapify)
+library(lubridate)
+library(dplyr)
+library(quantmod)
+library(purrr)
+
+
+
+
+
+
+# returns data for company for many dates
+get_different_dates <- function(symbol = "AAPL", reference_date = Sys.Date(), source = "yahoo") {
+  target_dates <- c(
+    `today` = reference_date,
+    `1_week_ago` = reference_date - weeks(1),
+    `1_month_ago` = reference_date %m-% months(1),
+    `3_months_ago` = reference_date %m-% months(3),
+    `6_months_ago` = reference_date %m-% months(6),
+    `start_of_year` = ymd(paste0(year(reference_date), "-01-01")),
+    `1_year_ago` = reference_date %m-% years(1)
+    
+  )
+  results <- list()
+  for (label in names(target_dates)) {
+    date <- target_dates[[label]]
+    # Query a 2-day window around the date
+    data <- tryCatch({
+      getSymbols(symbol, src = source, from = date - days(2), to = date + days(2), auto.assign = FALSE)
+    }, error = function(e) return(NULL))
+    if (is.null(data)) next
+    valid_dates <- index(data)
+    # Find the latest available date <= target
+    closest_date <- max(valid_dates[valid_dates <= date])
+    row_data <- data[closest_date]
+    df_row <- data.frame(date = closest_date, reference = label, symbol = symbol, coredata(row_data))
+    colnames(df_row) <- c("date", "reference", "symbol", str_replace(colnames(df_row)[-(1:3)], paste0("^", symbol, "\\."), ""))
+    results[[length(results) + 1]] <- df_row
+  }
+  df <- bind_rows(results)
+  differences <- c()
+  for (i in 2:length(target_dates)) {
+    num <- (df$Adjusted[1] - df$Adjusted[i]) / df$Adjusted[i] * 100
+    differences <- c(differences, paste(as.character(round(num, 2)), "%"))
+  }
+  return(differences)
+}
+
+
+
+# loading sp500 data (tymczasowe rozwiązanie)#TODO karol
+load("C:/Users/onece/OneDrive/Pulpit/sem4/data_vis/lab/assignment4/Financial_Dashboard/sp500.RData")
+sp500 <- sp500 %>%
+  mutate(across(c(Open, Close, diff, diff_perc), round, 2))
+df3 <- getSymbols("AAPL", src = "yahoo", from = "2025-03-01", to = Sys.Date(), auto.assign = FALSE)
+
