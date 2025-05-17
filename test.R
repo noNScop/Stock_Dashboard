@@ -281,7 +281,7 @@ get_data_1week_new <- function(symbols, date = Sys.Date(), source = "yahoo") {
   
   for (symbol in symbols) {
     df <- tryCatch({
-      getSymbols(symbol, src = source, from = date - 7, to = date + 1, auto.assign = FALSE)
+      getSymbols(symbol, src = source, from = date - 8, to = date, auto.assign = FALSE)
     }, error = function(e) {
       message(paste("Error fetching:", symbol, "-", e$message))
       return(NULL)
@@ -335,5 +335,15 @@ get_companies_sp500_info <- function(){
   return(df)
 }
 sp500 = get_companies_sp500_info()
-save(sp500, file = "C:/Users/onece/OneDrive/Pulpit/sem4/data_vis/lab/assignment4/Financial_Dashboard/sp500.RData")
+
+folder <- drive_get("financial_dashboard_cache")
+
+drive_upload(
+  media = "sp500.RData",
+  path = folder,
+  name = "sp500.RData",
+  overwrite = TRUE
+)
+
+# save(sp500, file = "C:/Users/onece/OneDrive/Pulpit/sem4/data_vis/lab/assignment4/Financial_Dashboard/sp500.RData")
 #sp500$Adjusted_week[2]

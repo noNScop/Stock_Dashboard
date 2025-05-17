@@ -1,16 +1,115 @@
+# DOWNLOAD DATA LOGIC
+
+get_data_1week_new <- function(symbols, date = Sys.Date(), source = "yahoo") {
+  results <- list()
+  
+  for (symbol in symbols) {
+    df <- tryCatch({
+      getSymbols(symbol, src = source, from = date - 7, to = date + 1, auto.assign = FALSE)
+    }, error = function(e) {
+      message(paste("Error fetching:", symbol, "-", e$message))
+      return(NULL)
+    })
+    
+    if (is.null(df) || nrow(df) == 0) next
+    
+    # Clean column names
+    colnames(df) <- gsub(paste0("^", symbol, "\\."), "", colnames(df))
+    
+    # Check if needed columns are present
+    required_cols <- c("Open", "Close", "Adjusted", "Volume")
+    if (!all(required_cols %in% colnames(df))) next
+    
+    # Use last row only if it exists
+    last_row <- tail(df, 1)
+    if (nrow(last_row) == 0) next
+    
+    results[[length(results) + 1]] <- data.frame(
+      Symbol = symbol,
+      Open = as.numeric(last_row$Open),
+      Close = as.numeric(last_row$Close),
+      Adjusted_week = I(list(as.numeric(df$Adjusted))),
+      Volume_avg = mean(df$Volume, na.rm = TRUE)
+    )
+  }
+  
+  return(bind_rows(results))
+}
 
 
 
 
+get_companies_sp500_info <- function(){
+  url <- "https://raw.githubusercontent.com/datasets/s-and-p-500-companies/master/data/constituents.csv"
+  sp500_info <- read.csv(url)
+  sp500_info <- data.frame(
+    Symbol = sp500_info$Symbol,
+    Name = sp500_info$Security,
+    Sector = sp500_info$GICS.Sector
+  )
+  #sp500_info = sp500_info[1:10,]
+  
+  df= get_data_1week_new(sp500_info$Symbol, Sys.Date(), source = "yahoo") %>%
+    left_join(sp500_info, by = "Symbol") %>%
+    mutate(
+      diff = Close - Open,
+      diff_perc = (diff / Open) * 100
+    )
+  
+  return(df)
+}
+
+# ----------------------------------
+
+# UPDATE CACHE LOGIC
+needs_update <- function(last_modified, threshold_hours = 24) {
+  difftime(Sys.time(), last_modified, units = "hours") > threshold_hours
+}
+
+update_cache <- ExtendedTask$new(function(status, sp500_data, sp500) {
+  future_promise({
+    drive_auth(path="GC_API_key.json")
+    file_meta <- drive_get("financial_dashboard_cache/sp500.RData")
+    last_modified <- as_datetime(file_meta$drive_resource[[1]]$modifiedTime)
+    list(file_meta = file_meta, last_modified = last_modified)
+  }) %...>% 
+    (function(info) {
+      if(needs_update(info$last_modified)) {
+        sp500 <- get_companies_sp500_info()
+        save(sp500, file = "sp500.RData")  # save first
+        drive_update(info$file_meta, media = "sp500.RData")
+      }
+      sp500
+    }) %...>% 
+    (function(sp500) {
+      sp500_data(sp500)     # assign reactiveVal
+      status("Data ready!")
+    }) %...!% 
+    (function(e) {
+      status(paste("Error:", e$message))
+    })
+})
+
+future::plan(multisession)
+
+# ----------------------------------
+
+# VIZUALISATIONS
 
 
 # Define server logic required to draw a histogram
 function(input, output, session) {
+  # sp500 downloaded and defined in global.R
+  sp500_data <- reactiveVal(sp500)
+  status <- reactiveVal("Waiting for update check...")
+  output$status_text <- renderText({
+    status()
+  })
+  update_cache$invoke(status, sp500_data, sp500)
 
-    
-    
   ## text and plot for 6 rectangles with stats for comapny
     output$text5 <- renderText({
+      sp500 <- sp500_data()
       paste("Stats for ", sp500$Symbol[input$table__reactable__selected])
     })
     output$Plot5 <- renderUI({
@@ -64,7 +163,7 @@ function(input, output, session) {
     output$treemap <- renderPlot({
       library(ggplot2)
       library(treemapify)
-      
+      sp500 <- sp500_data()
       df <- sp500[sp500$Sector %in% input$treemap2, ]
      
       
@@ -124,6 +223,7 @@ function(input, output, session) {
       input$plot3_choice_range
       input$table__reactable__selected
     },{
+      sp500 <- sp500_data()
       relayout <- event_data("plotly_relayout", source = "candle")
       end_date <- min(as.Date(relayout[["xaxis.range[1]"]]), Sys.Date())
       
@@ -145,6 +245,7 @@ function(input, output, session) {
     
     # candle plot with plotly
     output$candlePlot3 <- renderPlotly({
+      sp500 <- sp500_data()
       df3 <- tryCatch({
         req(df3_reactive())  
       }, error = function(e) {
@@ -212,7 +313,7 @@ function(input, output, session) {
     
     output$table <- renderReactable({
       
-      
+      sp500 <- sp500_data()
       sp500 <- sp500 %>%
         select(
           Sector, Symbol, Name, everything()
@@ -254,7 +355,4 @@ function(input, output, session) {
         )
       )
     })
-    
-    
-
 }

@@ -9,7 +9,11 @@ library(lubridate)
 library(dplyr)
 library(quantmod)
 library(purrr)
-
+library(reactable)
+library(sparkline)
+library(googledrive)
+library(future)
+library(promises)
 
 
 
@@ -55,8 +59,19 @@ get_different_dates <- function(symbol = "AAPL", reference_date = Sys.Date(), so
 
 
 # loading sp500 data (tymczasowe rozwiązanie)#TODO karol
-load("C:/Users/onece/OneDrive/Pulpit/sem4/data_vis/lab/assignment4/Financial_Dashboard/sp500.RData")
+
+# Authenticate first if needed
+drive_auth(path="GC_API_key.json")
+
+# Get metadata (optional step)
+file <- drive_get("financial_dashboard_cache/sp500.RData")
+
+# Download the file
+drive_download(file, path = "sp500.RData", overwrite = TRUE)
+
+# Load it
+load("sp500.RData")
+
 sp500 <- sp500 %>%
   mutate(across(c(Open, Close, diff, diff_perc), round, 2))
 df3 <- getSymbols("AAPL", src = "yahoo", from = "2025-03-01", to = Sys.Date(), auto.assign = FALSE)
-

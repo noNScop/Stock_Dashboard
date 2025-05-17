@@ -1,6 +1,3 @@
-
-
-
 navbarPage(
   
   "My Dashboard",
@@ -32,8 +29,13 @@ navbarPage(
     sidebarLayout(
       position = "right",
       sidebarPanel(
-        
         width = 5,
+        # ✅ Status Message Card
+        card(
+          h5("Status:"),
+          verbatimTextOutput("status_text")
+        ),
+        
         card(
           h4(textOutput("text5")),
           uiOutput("Plot5"),
@@ -65,7 +67,7 @@ navbarPage(
               selectedTextFormat = "count > 3"
             ), 
             multiple = FALSE
-          ),
+          )
         )
       ),
       mainPanel(
