@@ -281,7 +281,7 @@ get_data_1week_new <- function(symbols, date = Sys.Date(), source = "yahoo") {
   
   for (symbol in symbols) {
     df <- tryCatch({
-      getSymbols(symbol, src = source, from = date - 8, to = date, auto.assign = FALSE)
+      getSymbols(symbol, src = source, from = date - 7, to = date + 1, auto.assign = FALSE)
     }, error = function(e) {
       message(paste("Error fetching:", symbol, "-", e$message))
       return(NULL)
