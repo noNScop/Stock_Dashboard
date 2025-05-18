@@ -38,8 +38,8 @@ navbarPage(
     #ticker .scrolling {
       display: inline-block;
       white-space: nowrap;
-      padding-left: 100%;
-      animation: ticker 25s linear infinite;
+      padding-left: 1%;
+      animation: ticker 30s linear infinite;
     }
 
     @keyframes ticker {
@@ -113,6 +113,19 @@ navbarPage(
             ), 
             multiple = FALSE
           )
+        ),
+        card(
+          p("should you invest(moving averages)"),
+          div(style = "overflow: hidden;",
+              div(style = "transform: scale(2); transform-origin: top ;",
+                  gaugeOutput("investmentGauge")
+              )
+          ),
+          sliderInput("Gauge_swich",
+                      "Choose range of moving averages",
+                      min = 10,
+                      max = 150,
+                      value = c(50, 150))
         )
       ),
       mainPanel(
@@ -124,7 +137,7 @@ navbarPage(
               inputId = "treemap2", 
               label = "Select:", 
               choices = unique(sp500$Sector), 
-              selected = unique(sp500$Sector),  # ← select all by default
+              selected = unique(sp500$Sector), 
               options = pickerOptions(
                 actionsBox = TRUE, 
                 size = 20,
@@ -137,11 +150,7 @@ navbarPage(
 
         card(
           #plotOutput("treemap")
-          sliderInput("num",
-                      "Choose a number",
-                      min = 1,
-                      max = 100,
-                      value = 50)
+          
           )
       )
     )

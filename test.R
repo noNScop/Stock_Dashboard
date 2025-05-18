@@ -371,3 +371,65 @@ library(tidyr)
 currencies <- separate(currencies, symbol, into = c("symbol"), sep = "=", extra = "drop")
 currencies$symbol <- paste0(substr(currencies$symbol, 1, 3), "-", substr(currencies$symbol, 4, nchar(currencies$symbol)))
 
+
+
+library(quantmod)
+
+getSymbols("AAPL", from = "2025-01-01")
+
+
+# Simple Moving Average (e.g., 20 days)
+sma20 <- SMA(Cl(AAPL), n = 20)
+
+# Exponential Moving Average (e.g., 20 days)
+ema20 <- EMA(Cl(AAPL), n = 20)
+
+chartSeries(AAPL, TA = "addSMA(20); addEMA(20)")
+
+
+
+
+
+library(quantmod)
+library(flexdashboard)  # For the gauge
+library(dplyr)
+
+# Get price data
+df <- getSymbols("FANG", from = Sys.Date()- 500, auto.assign = FALSE)
+price <- Cl(df)
+        
+# Compute moving averages
+ma_short <- SMA(price, n = 50)
+ma_long  <- SMA(price, n = 150)
+
+dif = ma_short - ma_long
+
+min_dif = min(dif, na.rm = TRUE) 
+max_dif = max(dif, na.rm = TRUE) 
+
+
+# Latest values
+latest_short <- last(ma_short)
+latest_long  <- last(ma_long)
+
+ma_diff_pct <- as.numeric((latest_short - latest_long) / latest_long)
+
+gauge(last(dif), min = min_dif - 1 , max = max_dif, 
+      symbol = '', gaugeSectors(
+        success = c(0, max_dif), 
+        #warning = c(0, 1), 
+        danger  = c(min_dif, 0)
+      )
+)
+
+
+
+
+
+
+
+
+
+
+
+

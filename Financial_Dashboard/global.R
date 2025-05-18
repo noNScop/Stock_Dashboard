@@ -116,3 +116,12 @@ load("sp500.RData")
 sp500 <- sp500 %>%
   mutate(across(c(Open, Close, diff, diff_perc), round, 2))
 df3 <- getSymbols("AAPL", src = "yahoo", from = "2025-03-01", to = Sys.Date(), auto.assign = FALSE)
+
+
+#my_data_test <- get_data_1day(cur_symbols, Sys.Date())
+
+
+
+
+
+

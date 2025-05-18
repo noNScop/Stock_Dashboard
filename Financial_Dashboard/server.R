@@ -55,6 +55,9 @@ get_companies_sp500_info <- function(){
       diff = Close - Open,
       diff_perc = (diff / Open) * 100
     )
+  df <- df %>%
+    mutate(across(where(is.numeric), ~ round(.x, 2)))
+  
   
   return(df)
 }
@@ -398,7 +401,30 @@ function(input, output, session) {
     })
     
     
-    
+    output$investmentGauge <- renderGauge({
+      dfGauge <- getSymbols(sp500$Symbol[input$table__reactable__selected], from = Sys.Date()- 1000, auto.assign = FALSE)
+      price <- Cl(dfGauge) 
+      
+      ma_short <- SMA(price, n = input$Gauge_swich[1])
+      ma_long  <- SMA(price, n = input$Gauge_swich[2])
+      
+      dif = ma_short - ma_long
+      
+      min_dif = min(dif, na.rm = TRUE) 
+      max_dif = max(dif, na.rm = TRUE) 
+
+      latest_short <- last(ma_short)
+      latest_long  <- last(ma_long)
+      
+      ma_diff_pct <- as.numeric((latest_short - latest_long) / latest_long)
+      
+      gauge(last(dif), min = min_dif - 1 , max = max_dif, 
+            symbol = '', gaugeSectors(
+              success = c(0, max_dif), 
+              danger  = c(min_dif, 0)
+            )
+      )
+    })
     
     
     
