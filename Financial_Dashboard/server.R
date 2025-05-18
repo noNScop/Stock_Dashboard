@@ -62,7 +62,7 @@ get_companies_sp500_info <- function(){
 # ----------------------------------
 
 # UPDATE CACHE LOGIC
-needs_update <- function(last_modified, threshold_hours = 24) {
+needs_update <- function(last_modified, threshold_hours = 1) {
   difftime(Sys.time(), last_modified, units = "hours") > threshold_hours
 }
 
@@ -72,15 +72,14 @@ update_cache <- ExtendedTask$new(function(status, sp500_data, sp500) {
     file_meta <- drive_get("financial_dashboard_cache/sp500.RData")
     last_modified <- as_datetime(file_meta$drive_resource[[1]]$modifiedTime)
     list(file_meta = file_meta, last_modified = last_modified)
+    sp500 <- sp500
+    if(needs_update(last_modified)) {
+      sp500 <- get_companies_sp500_info()
+      save(sp500, file = "sp500.RData")  # save first
+      drive_update(file_meta, media = "sp500.RData")
+    }
+    sp500
   }) %...>% 
-    (function(info) {
-      if(needs_update(info$last_modified)) {
-        sp500 <- get_companies_sp500_info()
-        save(sp500, file = "sp500.RData")  # save first
-        drive_update(info$file_meta, media = "sp500.RData")
-      }
-      sp500
-    }) %...>% 
     (function(sp500) {
       sp500_data(sp500)     # assign reactiveVal
       status("Data ready!")
@@ -164,6 +163,11 @@ function(input, output, session) {
       library(ggplot2)
       library(treemapify)
       sp500 <- sp500_data()
+      
+      if (length(input$treemap2) == 0) {
+        return(NULL)
+      }
+      
       df <- sp500[sp500$Sector %in% input$treemap2, ]
      
       
@@ -227,7 +231,6 @@ function(input, output, session) {
       relayout <- event_data("plotly_relayout", source = "candle")
       end_date <- min(as.Date(relayout[["xaxis.range[1]"]]), Sys.Date())
       
-      
       start_date <- switch(
         input$plot3_choice_range,
         "1M" = end_date %m-% months(1),
@@ -246,6 +249,12 @@ function(input, output, session) {
     # candle plot with plotly
     output$candlePlot3 <- renderPlotly({
       sp500 <- sp500_data()
+      
+      # If nothing is selected, return nothing
+      if (is.null(input$table__reactable__selected)) {
+        return(NULL)
+      }
+      
       df3 <- tryCatch({
         req(df3_reactive())  
       }, error = function(e) {
