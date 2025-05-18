@@ -59,30 +59,36 @@ library(quantmod)
 library(dplyr)
 library(stringr)
 
-get_data_1day <- function(symbols, date, source = "yahoo") {
+get_data_1day <- function(symbols, date, source = "yahoo", max_lookback = 5) {
   results <- list()
   
   for (symbol in symbols) {
-    # Safely attempt to get the data
-    data <- tryCatch({
-      getSymbols(symbol, src = source, from = date - 4, to = date + 1, auto.assign = FALSE)
-    }, error = function(e) {
-      message(paste("Error fetching:", symbol, "-", e$message))
-      return(NULL)
-    })
+    found <- FALSE
+    for (i in 0:max_lookback) {
+      try_date <- date - i
+      
+      data <- tryCatch({
+        getSymbols(symbol, src = source, from = try_date, to = try_date + 1, auto.assign = FALSE)
+      }, error = function(e) {
+        message(paste("Error fetching:", symbol, "-", e$message))
+        return(NULL)
+      })
+      
+      if (!is.null(data) && nrow(data) > 0) {
+        row_data <- data[1, ]
+        df_row <- data.frame(date = try_date, Symbol = symbol, coredata(row_data))
+        
+        # Clean column names
+        colnames(df_row) <- c("date", "symbol", "Open", "High", "Low", "Close", "Volume", "Adjusted")        
+        results[[length(results) + 1]] <- df_row
+        found <- TRUE
+        break
+      }
+    }
     
-    # Skip if data could not be fetched
-    if (is.null(data)) next
-    
-    valid_dates <- index(data)
-    latest_date <- max(valid_dates[valid_dates <= date])
-    row_data <- data[latest_date]
-    df_row <- data.frame(date = latest_date, Symbol = symbol, coredata(row_data))
-    
-    # Clean column names
-    colnames(df_row) <- c("date", "Symbol", str_replace(colnames(df_row)[-(1:2)], paste0("^", symbol, "\\."), ""))
-    
-    results[[length(results) + 1]] <- df_row
+    if (!found) {
+      message(paste("No data found for", symbol, "within", max_lookback, "days before", date))
+    }
   }
   
   return(bind_rows(results))
@@ -347,3 +353,21 @@ drive_upload(
 
 # save(sp500, file = "C:/Users/onece/OneDrive/Pulpit/sem4/data_vis/lab/assignment4/Financial_Dashboard/sp500.RData")
 #sp500$Adjusted_week[2]
+
+
+
+
+
+
+
+symbols <-  c("PLNEUR=X", "PLNUSD=X", "PLNGBP=X", "PLNCHF=X", "PLNCZK=X", "PLNHUF=X", "PLNJPY=X", "PLNSEK=X")
+#getSymbols(symbols, src = "yahoo", from = Sys.Date() - 1)
+currencies <- get_data_1day(symbols, Sys.Date())
+
+
+
+library(tidyr)
+
+currencies <- separate(currencies, symbol, into = c("symbol"), sep = "=", extra = "drop")
+currencies$symbol <- paste0(substr(currencies$symbol, 1, 3), "-", substr(currencies$symbol, 4, nchar(currencies$symbol)))
+

@@ -19,6 +19,33 @@ navbarPage(
                height = "35px"
              )
            ),
+           
+           tags$head(
+             tags$style(HTML("
+      #ticker {
+        white-space: nowrap;
+        overflow: hidden;
+        box-sizing: border-box;
+        background: #aaa;
+        color: #fff;
+        padding: 10px;
+        font-family: monospace;
+        font-weight: bold;
+      }
+      #ticker span {
+        display: inline-block;
+        padding-left: 100%;
+        animation: ticker 25s linear infinite;
+      }
+      @keyframes ticker {
+        0% { transform: translateX(0); }
+        100% { transform: translateX(-100%); }
+      }
+    "))
+           ),
+           
+           div(id = "ticker", span(textOutput("ticker_text", inline = TRUE))),
+           
     card(
       reactableOutput("table"),
       

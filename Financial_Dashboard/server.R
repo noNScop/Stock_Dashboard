@@ -355,4 +355,41 @@ function(input, output, session) {
         )
       )
     })
+    
+    
+    
+    
+    
+    #moving bar 
+    data <- reactiveVal(get_data_1day(cur_symbols, Sys.Date()))
+    
+    observe({
+      invalidateLater(30000, session)
+      updated <- get_data_1day(cur_symbols, Sys.Date())
+      
+      data(updated)
+    })
+    
+    output$ticker_text <- renderText({
+      curr_df <- data()
+      curr_df <- separate(curr_df, symbol, into = c("symbol"), sep = "=", extra = "drop")
+      curr_df$symbol <- paste0(substr(curr_df$symbol, 1, 3), "-", substr(curr_df$symbol, 4, nchar(curr_df$symbol)))
+      
+      curr_df$Adjusted <- as.numeric(curr_df$Adjusted)
+      curr_df$diff_perc <- round((curr_df$Adjusted - curr_df$Adjusted[1]) / curr_df$Adjusted[1] * 100, 2)
+      curr_df$Name <- curr_df$symbol  
+      
+      to_return <- paste0(
+        paste0(curr_df$symbol, " ", curr_df$diff_perc, "%", collapse = " | ")
+      )
+      return(to_return)
+    })
+    
+    
+    
+    
+    
+    
+    
+    
 }

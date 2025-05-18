@@ -14,6 +14,47 @@ library(sparkline)
 library(googledrive)
 library(future)
 library(promises)
+library(tidyr)
+
+
+
+
+
+
+get_data_1day <- function(symbols, date, source = "yahoo", max_lookback = 5) {
+  results <- list()
+  
+  for (symbol in symbols) {
+    found <- FALSE
+    for (i in 0:max_lookback) {
+      try_date <- date - i
+      
+      data <- tryCatch({
+        getSymbols(symbol, src = source, from = try_date, to = try_date + 1, auto.assign = FALSE)
+      }, error = function(e) {
+        message(paste("Error fetching:", symbol, "-", e$message))
+        return(NULL)
+      })
+      
+      if (!is.null(data) && nrow(data) > 0) {
+        row_data <- data[1, ]
+        df_row <- data.frame(date = try_date, Symbol = symbol, coredata(row_data))
+        
+        # Clean column names
+        colnames(df_row) <- c("date", "symbol", "Open", "High", "Low", "Close", "Volume", "Adjusted")        
+        results[[length(results) + 1]] <- df_row
+        found <- TRUE
+        break
+      }
+    }
+    
+    if (!found) {
+      message(paste("No data found for", symbol, "within", max_lookback, "days before", date))
+    }
+  }
+  
+  return(bind_rows(results))
+}
 
 
 
