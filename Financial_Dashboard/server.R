@@ -370,20 +370,24 @@ function(input, output, session) {
       data(updated)
     })
     
-    output$ticker_text <- renderText({
+    output$ticker_text <- renderUI({
       curr_df <- data()
-      curr_df <- separate(curr_df, symbol, into = c("symbol"), sep = "=", extra = "drop")
+      curr_df <- tidyr::separate(curr_df, symbol, into = c("symbol"), sep = "=", extra = "drop")
       curr_df$symbol <- paste0(substr(curr_df$symbol, 1, 3), "-", substr(curr_df$symbol, 4, nchar(curr_df$symbol)))
       
       curr_df$Adjusted <- as.numeric(curr_df$Adjusted)
-      curr_df$diff_perc <- round((curr_df$Adjusted - curr_df$Adjusted[1]) / curr_df$Adjusted[1] * 100, 2)
-      curr_df$Name <- curr_df$symbol  
+      curr_df$diff_perc <- round((curr_df$Close - curr_df$Open) / curr_df$Open * 100, 2)
       
-      to_return <- paste0(
-        paste0(curr_df$symbol, " ", curr_df$diff_perc, "%", collapse = " | ")
-      )
-      return(to_return)
+      # Generate HTML spans with appropriate color
+      parts <- mapply(function(sym, adj, change) {
+        color_class <- if (change >= 0) "green" else "red"
+        sprintf('<span class="ticker-item %s">%s %.3f (%.2f%%)</span>', color_class, sym, adj, change)
+      }, curr_df$symbol, curr_df$Adjusted, curr_df$diff_perc, SIMPLIFY = TRUE)
+      
+      # Duplicate ticker content to make it loop smoothly
+      HTML(paste(c(parts, parts), collapse = " | "))
     })
+    
     
     
     

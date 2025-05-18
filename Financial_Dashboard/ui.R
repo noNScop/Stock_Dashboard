@@ -8,6 +8,7 @@ navbarPage(
       background-color: #e0e0e0 !important;
     }
   ")),
+ 
   tabPanel("Dashboard",
            div(
              style = "display: flex; align-items: center;",
@@ -22,29 +23,46 @@ navbarPage(
            
            tags$head(
              tags$style(HTML("
-      #ticker {
-        white-space: nowrap;
-        overflow: hidden;
-        box-sizing: border-box;
-        background: #aaa;
-        color: #fff;
-        padding: 10px;
-        font-family: monospace;
-        font-weight: bold;
-      }
-      #ticker span {
-        display: inline-block;
-        padding-left: 100%;
-        animation: ticker 25s linear infinite;
-      }
-      @keyframes ticker {
-        0% { transform: translateX(0); }
-        100% { transform: translateX(-100%); }
-      }
-    "))
+    #ticker {
+      white-space: nowrap;
+      overflow: hidden;
+      box-sizing: border-box;
+      background: #aaa;
+      color: #fff;
+      padding: 10px;
+      font-family: monospace;
+      font-weight: bold;
+      position: relative;
+    }
+
+    #ticker .scrolling {
+      display: inline-block;
+      white-space: nowrap;
+      padding-left: 100%;
+      animation: ticker 25s linear infinite;
+    }
+
+    @keyframes ticker {
+      0% { transform: translateX(0); }
+      100% { transform: translateX(-50%); }
+    }
+
+    .ticker-item {
+      margin-right: 30px;
+    }
+
+    .green {
+      color: #00ff00;
+    }
+
+    .red {
+      color: #ff4c4c;
+    }
+  "))
            ),
            
-           div(id = "ticker", span(textOutput("ticker_text", inline = TRUE))),
+           
+           div(id = "ticker", div(class = "scrolling", htmlOutput("ticker_text"))),
            
     card(
       reactableOutput("table"),
