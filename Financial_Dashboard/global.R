@@ -15,6 +15,9 @@ library(googledrive)
 library(future)
 library(promises)
 library(tidyr)
+library(flexdashboard)
+
+library(highcharter)
 
 
 
@@ -52,7 +55,7 @@ get_data_1day <- function(symbols, date, source = "yahoo", max_lookback = 5) {
       message(paste("No data found for", symbol, "within", max_lookback, "days before", date))
     }
   }
-  
+  print("get_data_1day obtained")
   return(bind_rows(results))
 }
 
@@ -77,7 +80,7 @@ get_different_dates <- function(symbol = "AAPL", reference_date = Sys.Date(), so
     date <- target_dates[[label]]
     # Query a 2-day window around the date
     data <- tryCatch({
-      getSymbols(symbol, src = source, from = date - days(2), to = date + days(2), auto.assign = FALSE)
+      getSymbols(symbol, src = source, from = date - days(6), to = date + days(1), auto.assign = FALSE)
     }, error = function(e) return(NULL))
     if (is.null(data)) next
     valid_dates <- index(data)
@@ -85,7 +88,7 @@ get_different_dates <- function(symbol = "AAPL", reference_date = Sys.Date(), so
     closest_date <- max(valid_dates[valid_dates <= date])
     row_data <- data[closest_date]
     df_row <- data.frame(date = closest_date, reference = label, symbol = symbol, coredata(row_data))
-    colnames(df_row) <- c("date", "reference", "symbol", str_replace(colnames(df_row)[-(1:3)], paste0("^", symbol, "\\."), ""))
+    colnames(df_row) <- c("Date", "Open", "High", "Low", "Close", "Volume", "Adjusted")
     results[[length(results) + 1]] <- df_row
   }
   df <- bind_rows(results)
@@ -94,6 +97,7 @@ get_different_dates <- function(symbol = "AAPL", reference_date = Sys.Date(), so
     num <- (df$Adjusted[1] - df$Adjusted[i]) / df$Adjusted[i] * 100
     differences <- c(differences, paste(as.character(round(num, 2)), "%"))
   }
+  print("data different dates obtained - this should not happen as it is outdated function")
   return(differences)
 }
 
@@ -116,7 +120,8 @@ load("sp500.RData")
 sp500 <- sp500 %>%
   mutate(across(c(Open, Close, diff, diff_perc), round, 2))
 df3 <- getSymbols("AAPL", src = "yahoo", from = "2025-03-01", to = Sys.Date(), auto.assign = FALSE)
-
+print("df3 data obtaied")
+cur_symbols <-  c("PLNEUR=X", "PLNUSD=X", "PLNGBP=X", "PLNCHF=X", "PLNCZK=X", "PLNHUF=X", "PLNJPY=X", "PLNSEK=X")
 
 #my_data_test <- get_data_1day(cur_symbols, Sys.Date())
 

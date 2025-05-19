@@ -32,7 +32,7 @@ get_data_1week_new <- function(symbols, date = Sys.Date(), source = "yahoo") {
       Volume_avg = mean(df$Volume, na.rm = TRUE)
     )
   }
-  
+  print("get_data_1week_new obtained")
   return(bind_rows(results))
 }
 
@@ -98,9 +98,35 @@ future::plan(multisession)
 
 # VIZUALISATIONS
 
+#table_selected() input$table__reactable__selected
+
+
+
+
+
+
 
 # Define server logic required to draw a histogram
 function(input, output, session) {
+  
+  
+  table_selected <- reactiveVal(1)
+  
+  observeEvent(input$table__reactable__selected, {
+    table_selected(input$table__reactable__selected)
+    
+  })
+  
+  output$text55 <- renderText({
+    req(table_selected())  # ensures it’s not NULL
+    selected_index <- table_selected()
+    paste("Selected index:", selected_index)
+  })
+  
+  
+  
+  
+  
   # sp500 downloaded and defined in global.R
   sp500_data <- reactiveVal(sp500)
   status <- reactiveVal("Waiting for update check...")
@@ -112,12 +138,12 @@ function(input, output, session) {
   ## text and plot for 6 rectangles with stats for comapny
     output$text5 <- renderText({
       sp500 <- sp500_data()
-      paste("Stats for ", sp500$Symbol[input$table__reactable__selected])
+      paste("Stats for ", sp500$Symbol[table_selected()])
     })
     output$Plot5 <- renderUI({
       df <- data.frame(
         label = c("1W", "1M", "3M", "6M", "YTD", "1Y"),
-        value = get_different_dates(sp500$Symbol[input$table__reactable__selected]),
+        value = get_different_dates(sp500$Symbol[table_selected()]),
         stringsAsFactors = FALSE
       )
       
@@ -162,60 +188,93 @@ function(input, output, session) {
     
     
     # creating treeplot of sp500 comapnies
-    output$treemap <- renderPlot({
-      library(ggplot2)
-      library(treemapify)
-      sp500 <- sp500_data()
+    library(highcharter)
+    library(dplyr)
+    
+    library(dplyr)
+    library(highcharter)
+    
+    output$treemap <- renderHighchart({
+      sp500 <- sp500_data()  # your reactive or static dataset
       
-      if (length(input$treemap2) == 0) {
-        return(NULL)
+      if (length(input$treemap2) == 0) return(NULL)
+      
+      df <- sp500 %>% filter(Sector %in% input$treemap2)
+      
+      # Simple color scale function based on diff_perc
+      colorize <- function(x) {
+        max_val <- max(abs(x), na.rm = TRUE)
+        sapply(x, function(val) {
+          if (is.na(val)) return("#666666")
+          if (val < 0) {
+            colorRampPalette(c("#E04040", "#666666"))(100)[
+              floor((val / -max_val) * 99) + 1
+            ]
+          } else {
+            colorRampPalette(c("#666666", "#40F040"))(100)[
+              floor((val / max_val) * 99) + 1
+            ]
+          }
+        })
       }
       
-      df <- sp500[sp500$Sector %in% input$treemap2, ]
-     
+      # Root node
+      root <- tibble(id = "root", parent = NA, value = NA, color = "#FFFFFF", name = "S&P 500")
       
-      df$label <- paste0(df$Symbol, "\n", sprintf("%.2f%%", df$diff_perc))
+      # Sector-level nodes
+      sectors <- df %>%
+        group_by(Sector) %>%
+        summarise(
+          Volume_avg = sum(Volume_avg, na.rm = TRUE),
+          .groups = "drop"
+        ) %>%
+        mutate(
+          id = Sector,
+          parent = "root",
+          value = Volume_avg,
+          color = "#999999",
+          name = Sector
+        ) %>%
+        select(id, parent, value, color, name)
       
-      ggplot(df, aes(
-        area = Volume_avg,
-        fill = diff_perc,
-        subgroup = Sector
-      )) +
-        geom_treemap() +
-        geom_treemap_text(
-          aes(label = Symbol),
-          colour = "black",
-          place = "centre",
-          grow = TRUE,
-          reflow = FALSE,
-          size = 12
-        ) +
-        #geom_treemap_text(
-        #  aes(label = paste0("\n\n", sprintf("%.2f%%", diff_perc))),
-        #  colour = "white",
-        #  place = "centre",
-        #  grow = TRUE,
-        #  reflow = TRUE,
-        #  size = 8,
-        #  min.size = 3
-        #) +
-        geom_treemap_subgroup_border(color = "black") +
-        geom_treemap_subgroup_text(
-          place = "topright",
-          colour = "white",
-          #alpha = 0.6,
-          grow = FALSE,
-          fontface = "italic",
-          size = 12
-        ) +
-        scale_fill_gradient2(
-          low = "#E04040",mid = "#666", high = "#40F040",
-          midpoint = 0,
-          name = "% Change"
-        ) + 
-       theme(legend.position = "bottom")
+      # Company-level nodes
+      companies <- df %>%
+        mutate(
+          id = Symbol,
+          parent = Sector,
+          value = Volume_avg,
+          color = colorize(diff_perc),
+          name = Symbol
+        ) %>%
+        select(id, parent, value, color, name)
       
+      # Combine all
+      nodes <- bind_rows(root, sectors, companies)
+      
+      # Render highcharter treemap
+      highchart() %>%
+        hc_chart(type = "treemap") %>%
+        hc_add_series(
+          data = list_parse(nodes),
+          allowDrillToNode = TRUE,
+          layoutAlgorithm = "squarified",
+          dataLabels = list(enabled = TRUE, style = list(fontSize = "12px")),
+          levels = list(
+            list(
+              level = 1,
+              dataLabels = list(enabled = TRUE, style = list(fontSize = "16px")),
+              borderWidth = 6,          # 👈 make borders thicker
+              borderColor = "#000000"   # 👈 optional: set edge color (black)
+            )
+          )
+        ) %>%
+        hc_tooltip(
+          pointFormat = "<b>{point.name}</b><br>Volume: {point.value}<br>"
+        ) %>%
+        hc_title(text = "Interactive S&P 500 Treemap")
     })
+    
+    
     
     
     
@@ -228,7 +287,7 @@ function(input, output, session) {
     observeEvent({
       event_data("plotly_relayout", source = "candle")
       input$plot3_choice_range
-      input$table__reactable__selected
+      table_selected()
     },{
       sp500 <- sp500_data()
       relayout <- event_data("plotly_relayout", source = "candle")
@@ -245,8 +304,9 @@ function(input, output, session) {
       print(start_date, end_date)
       
       #end_date <- as.Date(relayout[["xaxis.range[1]"]])
-      df <- getSymbols(sp500$Symbol[input$table__reactable__selected], src = "yahoo", from = start_date, to = end_date, auto.assign = FALSE)
+      df <- getSymbols(sp500$Symbol[table_selected()], src = "yahoo", from = start_date, to = end_date, auto.assign = FALSE)
       df3_reactive(df)
+      print("data for 6 panels obtained")
     })
     
     # candle plot with plotly
@@ -254,7 +314,7 @@ function(input, output, session) {
       sp500 <- sp500_data()
       
       # If nothing is selected, return nothing
-      if (is.null(input$table__reactable__selected)) {
+      if (is.null(table_selected())) {
         return(NULL)
       }
       
@@ -263,8 +323,9 @@ function(input, output, session) {
       }, error = function(e) {
         # If reactive fails, fall back to fetching new data
         tryCatch({
-          getSymbols(sp500$Symbol[input$table__reactable__selected], src = "yahoo", from = Sys.Date() - 30, to = Sys.Date(), auto.assign = FALSE)
-        }, error = function(e2) {
+          getSymbols(sp500$Symbol[table_selected()], src = "yahoo", from = Sys.Date() - 30, to = Sys.Date(), auto.assign = FALSE)
+        print("this should not happen")
+          }, error = function(e2) {
           showNotification("Failed to load stock data.", type = "error")
           return(NULL)
         })
@@ -286,7 +347,7 @@ function(input, output, session) {
         ) %>%
           layout(
             dragmode = "pan",
-            title = paste("Candlestick Chart:", sp500$Symbol[input$table__reactable__selected]),
+            title = paste("Candlestick Chart:", sp500$Symbol[table_selected()]),
             xaxis = list(rangeslider = list(visible = FALSE)),
             yaxis = list(title = "Price (USD)"#,
                          #range = c(0, max(df3_plot$High, na.rm = TRUE))
@@ -305,7 +366,7 @@ function(input, output, session) {
         ) %>%
           layout(
             dragmode = "pan",
-            title = paste("Line Chart:", sp500$Symbol[input$table__reactable__selected]),
+            title = paste("Line Chart:", sp500$Symbol[table_selected()]),
             xaxis = list(rangeslider = list(visible = FALSE)),
             yaxis = list(title = "Adjusted Close (USD)")
           )
@@ -401,8 +462,11 @@ function(input, output, session) {
     })
     
     
+    
+    
     output$investmentGauge <- renderGauge({
-      dfGauge <- getSymbols(sp500$Symbol[input$table__reactable__selected], from = Sys.Date()- 1000, auto.assign = FALSE)
+      dfGauge <- getSymbols(sp500$Symbol[table_selected()], from = Sys.Date()- 1000, auto.assign = FALSE)
+      print("gauge data obtained")
       price <- Cl(dfGauge) 
       
       ma_short <- SMA(price, n = input$Gauge_swich[1])

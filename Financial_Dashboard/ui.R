@@ -116,7 +116,7 @@ navbarPage(
         ),
         card(
           p("should you invest(moving averages)"),
-          div(style = "overflow: hidden;",
+          div(style = "overflow: hidden; height: 220px",
               div(style = "transform: scale(2); transform-origin: top ;",
                   gaugeOutput("investmentGauge")
               )
@@ -145,13 +145,16 @@ navbarPage(
               ), 
               multiple = TRUE
             ),
-            plotOutput("treemap", width = "100%"), 
+            highchartOutput("treemap")
         ),
 
         card(
           #plotOutput("treemap")
           
-          )
+          ),
+        card(
+          textOutput("text55")
+        )
       )
     )
   ),
