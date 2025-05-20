@@ -158,17 +158,45 @@ navbarPage(
   ),
   
   # ---------------- About Tab ---------------- #
+  
   tabPanel("About",
-           h2("About This App"),
-           p("This dashboard visualizes key financial insights for companies in the S&P 500 index."),
+           h3("Dashboard Overview"),
+           p("This dashboard provides a comprehensive overview of key financial insights for companies in the S&P 500 index."),
+           p("Explore the following features:"),
            tags$ul(
-             tags$li("📊 Candlestick and line charts show price trends."),
-             tags$li("📦 Stat boxes summarize recent performance over multiple timeframes."),
-             tags$li("📈 An investment gauge tracks SMA crossovers."),
-             tags$li("🌳 A treemap displays companies by sector and volume."),
-             tags$li("📰 News headlines provide market context."),
-             tags$li("🧾 A live ticker shows real-time price changes.")
+             tags$li(
+               strong("📊 Price Charts"), tags$br(),
+               "Candlestick charts show open, high, low, and close prices — ideal for technical analysis.", tags$br(),
+               "Line charts display adjusted closing prices for smoother trends."
+             ),
+             
+             tags$li(
+               strong("📦 Stat Boxes"), tags$br(),
+               "Six colored panels summarize recent performance over various time frames, helping assess momentum."
+             ),
+             
+             tags$li(
+               strong("📈 Investment Gauge"), tags$br(),
+               "Shows the difference between two Simple Moving Averages. Positive (green) suggests upward momentum; negative (red) signals a downtrend."
+             ),
+             
+             tags$li(
+               strong("🌳 Treemap"), tags$br(),
+               "Displays top-traded companies by volume, organized by sector. Color indicates recent price change."
+             ),
+             
+             tags$li(
+               strong("📰 News"), tags$br(),
+               "Relevant economic headlines provide context for market movements."
+             ),
+             
+             tags$li(
+               strong("🧾 Ticker"), tags$br(),
+               "A live scrolling bar shows real-time adjusted prices and percentage changes for selected tickers. Green = gains, red = losses."
+             )
            ),
+           h3("Info"),
+           
            p("Created by: Oliwier Necelman and Karol Sroka"),
            p("Data: Yahoo Finance — S&P 500 companies"),
            p("GitHub: ", a("https://github.com/noNScop/Stock_Dashboard/", href = "https://github.com/noNScop/Stock_Dashboard/")),
@@ -183,22 +211,41 @@ navbarPage(
              allow = "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture",
              allowfullscreen = NA
            )
-           
   ),
+  
+  
   
   
   # ---------------- Help Tab ---------------- #
   tabPanel("Help",
-           h2("How to Use the App"),
-           tags$ul(
-             tags$li("📊 Use the chart controls to select time range and type (candlestick or line)."),
-             tags$li("📈 Enable 'Show averages' to overlay short- and long-term SMAs."),
-             tags$li("🎚️ Use the SMA sliders to adjust periods for chart overlays and the investment gauge."),
-             tags$li("📦 Click on a company in the table to update the charts and stats."),
-             tags$li("🌳 Interact with the treemap to explore top-volume companies by sector."),
-             tags$li("📰 Review the latest news headlines for context."),
-             tags$li("🧾 Watch the live ticker for real-time price updates.")
-           )
+  h3("How to interact with key features:"),
+  
+  tags$ul(
+    tags$li(
+      strong("📊 Stock Chart (Main Panel)"), tags$br(),
+      "Time Range Selector adjusts the visible date window for the stock's performance (e.g., 1M, 6M, etc.).", tags$br(),
+      "Chart Type lets you switch between candlestick and line views.", tags$br(),
+      "\"Show averages\" Toggle enables overlay of short- and long-term moving averages, based on the slider below.", tags$br(),
+      "Slider Input allows you to define the SMA periods used for the investment gauge and chart overlays."
+    ),
+    
+    tags$li(
+      strong("📦 Six Stat Boxes (Sidebar)"), tags$br(),
+      "Show percentage changes over common time intervals (1W, 1M, 3M, etc.) and update when you select a different stock from the table."
+    ),
+    
+    tags$li(
+      strong("📈 Investment Gauge"), tags$br(),
+      "Automatically reflects the current difference between two SMAs. The gauge updates dynamically based on the selected stock and SMA range."
+    ),
+    h4("Moving Averages & Investing"),
+      tags$li(
+      "Moving averages smooth out price data to identify trends by averaging prices over a set period." , tags$br(),
+       "A short-term moving average crossing above a long-term moving average can signal a buying opportunity." , tags$br(),
+       "Conversely, a short-term average crossing below a long-term average may indicate a sell signal.")
+    
   )
+)
+
   
 )
