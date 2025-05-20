@@ -426,6 +426,18 @@ gauge(last(dif), min = min_dif - 1 , max = max_dif,
 
 
 
+#shinyapps account and publishing app
+
+install.packages('rsconnect')
+
+rsconnect::setAccountInfo(name='stickstickens',
+                          token='086F96B67BED7CE8766A8D0B93417BF1',
+                          secret='jaP7OTEoMfnj09f3AoBWSIWQw4AAOIhjYZyC1+Jy')
+install.packages("xfun")
+
+library(rsconnect)
+rsconnect::deployApp("C:\\Users\\onece\\OneDrive\\Pulpit\\sem4\\data_vis\\lab\\assignment4\\github_project\\Stock_Dashboard\\Financial_Dashboard")
+
 
 
 

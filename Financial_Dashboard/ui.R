@@ -120,11 +120,11 @@ navbarPage(
         }
 
         .green {
-          color: #207d20;
+          color: #184912;
         }
 
         .red {
-          color: #E04040;
+          color: #8e3236;
         }
       "))
            ),
@@ -205,7 +205,7 @@ navbarPage(
            h3("Watch a Quick Overview"),
            tags$iframe(
              width = "560", height = "315",
-             src = "https://www.youtube.com/watch?v=OPlslc1ZG0Q",
+             src = "https://www.youtube.com/embed/z-INcQkiKwo",
              title = "YouTube video player",
              frameborder = "0",
              allow = "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture",

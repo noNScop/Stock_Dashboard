@@ -171,11 +171,11 @@ function(input, output, session) {
         value = get_different_dates(sp500$Symbol[table_selected()]),
         stringsAsFactors = FALSE
       )
-      
+
       box_ui <- lapply(1:nrow(df), function(i) {
         value <- df$value[i]
-        color <- if (grepl("-", value)) "#aB2020" else "#207d20"
-        bg <- if (grepl("-", value)) "#733030" else "#204a20"
+        color <- if (grepl("-", value)) "#ce7276" else "#689982"
+        bg <- if (grepl("-", value)) "#8e3236" else "#184912"
         
         div(
           style = paste0(
