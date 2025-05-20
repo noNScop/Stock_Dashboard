@@ -174,8 +174,8 @@ function(input, output, session) {
       
       box_ui <- lapply(1:nrow(df), function(i) {
         value <- df$value[i]
-        color <- if (grepl("-", value)) "#9B2020" else "#206d20"
-        bg <- if (grepl("-", value)) "#431010" else "#102a10"
+        color <- if (grepl("-", value)) "#aB2020" else "#207d20"
+        bg <- if (grepl("-", value)) "#733030" else "#204a20"
         
         div(
           style = paste0(
@@ -219,9 +219,10 @@ function(input, output, session) {
     
     output$treemap <- renderHighchart({
       sp500 <- sp500_data()
-      if (length(input$treemap2) == 0) return(NULL)
+      #if (length(input$treemap2) == 0) return(NULL)
       
-      df <- sp500 %>% filter(Sector %in% input$treemap2)
+      #df <- sp500 %>% filter(Sector %in% input$treemap2)
+      df <- sp500
       print(str(df))
       # Simple color scale function based on diff_perc
       colorize <- function(x) {
@@ -342,7 +343,7 @@ function(input, output, session) {
     }
   ")
         )%>%
-        hc_title(text = "Interactive S&P 500 Treemap")
+        hc_title(text = "S&P 500 Companies")
       
     })
     
@@ -386,6 +387,11 @@ function(input, output, session) {
     
     
     # candle plot with plotly
+    
+    output$title_candle <- renderText({
+      sp500 <- sp500_data()
+      paste("stock values for ", sp500$Symbol[table_selected()])
+    })
     output$candlePlot3 <- renderPlotly({
       sp500 <- sp500_data()
       
@@ -434,8 +440,8 @@ function(input, output, session) {
         print(length(ma_df$MA_Short))
         print(length(ma_df$MA_Long))
    
-      print("achavfuvuavbavbivbibaibi")
-      print(head(df3_plot))
+      #print("achavfuvuavbavbivbibaibi")
+      #print(head(df3_plot))
       if (input$plot3_type == "candle plot") {
         
         p <- plot_ly(
@@ -454,7 +460,7 @@ function(input, output, session) {
           layout(
             legend = list(orientation = "h", x = 0.5, xanchor = "center", y = -0.2),
             dragmode = "pan",
-            title = paste("Candlestick Chart:", sp500$Symbol[table_selected()]),
+            #title = paste("Candlestick Chart:", sp500$Symbol[table_selected()]),
             xaxis = list(rangeslider = list(visible = FALSE)),
             yaxis = list(title = "Price (USD)")
           )
@@ -465,7 +471,7 @@ function(input, output, session) {
           y = ~Adjusted,
           type = 'scatter',
           mode = 'lines',
-          line = list(color = "#55b"),
+          line = list(color = "#667"),
           name = "Adjusted Close",
           source = "candle"
         ) %>%
@@ -515,14 +521,14 @@ function(input, output, session) {
         columns = list(
           diff = colDef(
             style = function(value) {
-              color <- if (value > 0) "green" else "red"
+              color <- if (value > 0) "#207d20" else "#E04040"
               list(color = color, fontWeight = "bold")
             }
           ),
           diff_perc = colDef(
             name = "Change (%)",
             cell = function(value) {
-              color <- if (value > 0) "green" else "red"
+              color <- if (value > 0) "#207d20" else "#E04040"
               htmltools::div(style = paste("color:", color, "; font-weight: bold"), paste0(round(value, 2), "%"))
             }
           ),

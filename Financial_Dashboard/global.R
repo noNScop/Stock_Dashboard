@@ -18,7 +18,7 @@ library(tidyr)
 library(flexdashboard)
 
 library(highcharter)
-library(dplyr)
+library(DT)
 
 
 
