@@ -76,10 +76,7 @@ navbarPage(
       sidebarPanel(
         width = 5,
         # ✅ Status Message Card
-        card(
-          h5("Status:"),
-          verbatimTextOutput("status_text")
-        ),
+        
         
         card(
           h4(textOutput("text5")),
@@ -87,6 +84,8 @@ navbarPage(
          #textInput("text5", label = NULL, value = "AAPL")
           ),
         card(
+          materialSwitch(inputId = "show_averages",label = "show averages", value = TRUE), # alternative material swich
+          
           plotlyOutput("candlePlot3"),
           
           pickerInput(
@@ -145,7 +144,7 @@ navbarPage(
               ), 
               multiple = TRUE
             ),
-            highchartOutput("treemap")
+            highchartOutput("treemap", height = "700px")
         ),
 
         card(
@@ -153,7 +152,12 @@ navbarPage(
           
           ),
         card(
-          textOutput("text55")
+          h5("Status:"),
+          verbatimTextOutput("status_text")
+        ),
+        card(
+          h3("Economic News Headlines"),
+          DTOutput("news_table", width = "700px")
         )
       )
     )

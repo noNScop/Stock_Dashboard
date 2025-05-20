@@ -109,6 +109,23 @@ future::plan(multisession)
 # Define server logic required to draw a histogram
 function(input, output, session) {
   
+  # ----------------------------------
+  
+  # REACTIVE VALUES
+  
+  df_gauge <- reactiveVal(NULL)
+  
+  observeEvent({
+    table_selected()
+  },{
+    sp500 <- sp500_data()
+    dfGauge <- getSymbols(sp500$Symbol[table_selected()], src = "yahoo", auto.assign = FALSE)
+    print("df_gauge(moving avg) obtained")
+    df_gauge(dfGauge)
+  })
+  
+  
+  
   
   table_selected <- reactiveVal(1)
   
@@ -135,6 +152,14 @@ function(input, output, session) {
   })
   update_cache$invoke(status, sp500_data, sp500)
 
+  
+  
+  # ----------------------------------
+  
+  # VIZUALISATIONS
+  
+  
+  
   ## text and plot for 6 rectangles with stats for comapny
     output$text5 <- renderText({
       sp500 <- sp500_data()
@@ -188,19 +213,16 @@ function(input, output, session) {
     
     
     # creating treeplot of sp500 comapnies
-    library(highcharter)
-    library(dplyr)
     
-    library(dplyr)
-    library(highcharter)
+    
+    
     
     output$treemap <- renderHighchart({
-      sp500 <- sp500_data()  # your reactive or static dataset
-      
+      sp500 <- sp500_data()
       if (length(input$treemap2) == 0) return(NULL)
       
       df <- sp500 %>% filter(Sector %in% input$treemap2)
-      
+      print(str(df))
       # Simple color scale function based on diff_perc
       colorize <- function(x) {
         max_val <- max(abs(x), na.rm = TRUE)
@@ -219,7 +241,7 @@ function(input, output, session) {
       }
       
       # Root node
-      root <- tibble(id = "root", parent = NA, value = NA, color = "#FFFFFF", name = "S&P 500")
+      #root <- tibble(id = "root", parent = NA, value = NA, color = "#FFFFFF", name = "S&P 500")
       
       # Sector-level nodes
       sectors <- df %>%
@@ -230,9 +252,9 @@ function(input, output, session) {
         ) %>%
         mutate(
           id = Sector,
-          parent = "root",
+          parent = NA,
           value = Volume_avg,
-          color = "#999999",
+          color = "#000",
           name = Sector
         ) %>%
         select(id, parent, value, color, name)
@@ -244,34 +266,84 @@ function(input, output, session) {
           parent = Sector,
           value = Volume_avg,
           color = colorize(diff_perc),
-          name = Symbol
+          symbol = Symbol,
+          Adjusted_week = round(Open, 2),
+          diff_perc = round(diff_perc, 2),
+          name = Name,
+          #price = round(Adjusted_week, 2)            # ✅ optional
         ) %>%
-        select(id, parent, value, color, name)
+        select(id, symbol, name, parent, value, color, name, diff_perc, Adjusted_week)
+      
       
       # Combine all
-      nodes <- bind_rows(root, sectors, companies)
+      nodes <- bind_rows(sectors, companies)
       
       # Render highcharter treemap
       highchart() %>%
         hc_chart(type = "treemap") %>%
+        hc_plotOptions(
+          treemap = list(
+            allowDrillToNode = TRUE,
+            levelIsConstant = TRUE,  # ✅ allows automatic drill-down
+            layoutAlgorithm = "squarified"
+          )
+        ) %>%
         hc_add_series(
           data = list_parse(nodes),
+          type = "treemap",
           allowDrillToNode = TRUE,
           layoutAlgorithm = "squarified",
-          dataLabels = list(enabled = TRUE, style = list(fontSize = "12px")),
           levels = list(
             list(
               level = 1,
-              dataLabels = list(enabled = TRUE, style = list(fontSize = "16px")),
-              borderWidth = 6,          # 👈 make borders thicker
-              borderColor = "#000000"   # 👈 optional: set edge color (black)
+              dataLabels = list(
+                enabled = TRUE,
+                style = list(
+                  fontSize = "16px",
+                  color = "#000"  # ✅ White text for black background
+                )
+              ),
+              borderWidth = 5,
+              borderColor = "#222"
+            ),
+            list(
+              level = 2,
+              dataLabels = list(
+                enabled = TRUE,
+                style = list(
+                  fontSize = "10px",
+                  color = "#FFF"  # ✅ Black text for light-colored company boxes
+                )
+              ),
+              borderWidth = 0.1,
+              borderColor = "#FFF"
             )
           )
         ) %>%
         hc_tooltip(
-          pointFormat = "<b>{point.name}</b><br>Volume: {point.value}<br>"
-        ) %>%
+          useHTML = TRUE,
+          formatter = JS("
+    function() {
+      var point = this.point;
+      var tooltip = '<b>' + point.symbol + '</b><br>';
+      
+      // Company-level (has diff_perc)
+      if (point.parent && typeof point.diff_perc !== 'undefined') {
+        tooltip += 'Sector: ' + point.parent + '<br>' +
+                   'Name: '   + point.name + '<br>' + 
+                   'Volume: ' + point.value + '$' + '<br>' +
+                   'Change: ' + point.diff_perc + '%' + '<br>' +
+                   'Price: '  + point.Adjusted_week + '$' ;
+      } else {
+        // Sector-level
+        tooltip += 'Volume: ' + point.value;
+      }
+      return tooltip;
+    }
+  ")
+        )%>%
         hc_title(text = "Interactive S&P 500 Treemap")
+      
     })
     
     
@@ -309,6 +381,10 @@ function(input, output, session) {
       print("data for 6 panels obtained")
     })
     
+    
+    
+    
+    
     # candle plot with plotly
     output$candlePlot3 <- renderPlotly({
       sp500 <- sp500_data()
@@ -334,26 +410,55 @@ function(input, output, session) {
       df3_plot <- data.frame(Date = index(df3), coredata(df3))
       colnames(df3_plot) <- c("Date", "Open", "High", "Low", "Close", "Volume", "Adjusted")
       
-      if(input$plot3_type == "candle plot"){
+      if( input$show_averages == TRUE){
+        dfGauge <- df_gauge()
+        price <- Cl(dfGauge) 
+        ma_short <- SMA(price, n = input$Gauge_swich[1])
+        ma_long  <- SMA(price, n = input$Gauge_swich[2])
+        
+        valid_dates <- df3_plot$Date
+        ma_df <- data.frame(
+          Date = index(price),
+          MA_Short = as.numeric(ma_short),
+          MA_Long = as.numeric(ma_long)
+        ) %>%
+          filter(Date %in% valid_dates)
+      }else{
+        ma_df <- data.frame(
+          Date = df3_plot$Date,
+          MA_Short = NA,
+          MA_Long = NA
+        )
+      }
+        
+        print(length(ma_df$MA_Short))
+        print(length(ma_df$MA_Long))
+   
+      print("achavfuvuavbavbivbibaibi")
+      print(head(df3_plot))
+      if (input$plot3_type == "candle plot") {
+        
         p <- plot_ly(
-          data = df3_plot,
-          x = ~Date,
           type = "candlestick",
-          open = ~Open,
-          high = ~High,
-          low = ~Low,
-          close = ~Close,
+          x = df3_plot$Date,
+          'open' = df3_plot$Open,
+          'high' = df3_plot$High,
+          'low' = df3_plot$Low,
+          'close' = df3_plot$Close,
           source = "candle"
         ) %>%
+          add_lines(data = ma_df, x = ~Date, y = ~MA_Short, name = paste0("SMA ", input$Gauge_swich[1]),
+                    line = list(color = "blue")) %>%
+          add_lines(data = ma_df, x = ~Date, y = ~MA_Long, name = paste0("SMA ", input$Gauge_swich[2]),
+                    line = list(color = "red")) %>%
           layout(
+            legend = list(orientation = "h", x = 0.5, xanchor = "center", y = -0.2),
             dragmode = "pan",
             title = paste("Candlestick Chart:", sp500$Symbol[table_selected()]),
             xaxis = list(rangeslider = list(visible = FALSE)),
-            yaxis = list(title = "Price (USD)"#,
-                         #range = c(0, max(df3_plot$High, na.rm = TRUE))
-                         )
+            yaxis = list(title = "Price (USD)")
           )
-      }else{
+      }else {
         p <- plot_ly(
           data = df3_plot,
           x = ~Date,
@@ -364,7 +469,12 @@ function(input, output, session) {
           name = "Adjusted Close",
           source = "candle"
         ) %>%
+          add_lines(data = ma_df, x = ~Date, y = ~MA_Short, name = paste0("SMA ", input$Gauge_swich[1]),
+                    line = list(color = "blue")) %>%
+          add_lines(data = ma_df, x = ~Date, y = ~MA_Long, name = paste0("SMA ", input$Gauge_swich[2]),
+                    line = list(color = "red")) %>%
           layout(
+            legend = list(orientation = "h", x = 0.5, xanchor = "center", y = -0.2),
             dragmode = "pan",
             title = paste("Line Chart:", sp500$Symbol[table_selected()]),
             xaxis = list(rangeslider = list(visible = FALSE)),
@@ -465,8 +575,9 @@ function(input, output, session) {
     
     
     output$investmentGauge <- renderGauge({
-      dfGauge <- getSymbols(sp500$Symbol[table_selected()], from = Sys.Date()- 1000, auto.assign = FALSE)
+      #dfGauge <- getSymbols(sp500$Symbol[table_selected()], auto.assign = FALSE)
       print("gauge data obtained")
+      dfGauge <- df_gauge()
       price <- Cl(dfGauge) 
       
       ma_short <- SMA(price, n = input$Gauge_swich[1])
@@ -489,6 +600,59 @@ function(input, output, session) {
             )
       )
     })
+    
+    
+    
+    
+    
+    #news headlines
+    rss_urls <- c(
+      "https://www.investing.com/rss/news.rss",         # General news
+      "https://www.investing.com/rss/news_25.rss",      # Commodities
+      "https://www.investing.com/rss/news_285.rss"      # Economic indicators
+    )
+    
+    # Reactive expression to fetch and combine all feeds
+    all_news <- reactive({
+      # Safely parse each feed and bind into one dataframe
+      purrr::map_dfr(rss_urls, ~{
+        tryCatch(
+          tidyRSS::tidyfeed(.x),
+          error = function(e) NULL
+        )
+      }) %>%
+        transmute(
+          Title = item_title,
+          Link = paste0("<a href='", item_link, "' target='_blank'>", item_title, "</a>"),
+          Date = as.character(item_pub_date)
+        ) %>%
+        distinct(Link, .keep_all = TRUE) %>%
+        arrange(desc(Date))
+    })
+    
+    output$news_table <- renderDT({
+      df <- all_news()
+      datatable(
+        df[, c("Link", "Date")],
+        escape = FALSE,
+        rownames = FALSE,
+        options = list(
+          pageLength = 5,
+          autoWidth = TRUE,
+          dom = 'tp',  # <-- This hides length menu, search box, and info text
+          columnDefs = list(
+            list(width = '70%', targets = 0),
+            list(width = '30%', targets = 1)
+          )
+        ),
+        colnames = c("Headline", "Publication Date")
+      )
+    })
+    
+
+    
+    
+    
     
     
     
