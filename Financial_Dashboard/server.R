@@ -266,10 +266,10 @@ function(input, output, session) {
           parent = Sector,
           value = Volume_avg,
           color = colorize(diff_perc),
-          symbol = Symbol,
+          symbol = Name,
           Adjusted_week = round(Open, 2),
           diff_perc = round(diff_perc, 2),
-          name = Name,
+          name = Symbol,
           #price = round(Adjusted_week, 2)            # ✅ optional
         ) %>%
         select(id, symbol, name, parent, value, color, name, diff_perc, Adjusted_week)
