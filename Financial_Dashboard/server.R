@@ -580,6 +580,18 @@ function(input, output, session) {
     
     
     
+    
+    
+    
+    # investment gauge
+    
+    
+    output$textGauge <- renderText({
+      sp500 <- sp500_data()
+      paste("Should you invest in ", sp500$Symbol[table_selected()], " ?")
+    })
+    
+    
     output$investmentGauge <- renderGauge({
       #dfGauge <- getSymbols(sp500$Symbol[table_selected()], auto.assign = FALSE)
       print("gauge data obtained")

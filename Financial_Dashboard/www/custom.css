@@ -1,0 +1,81 @@
+/* General background and font */
+body {
+  background-color: #58595a !important;
+  font-family: 'Segoe UI', sans-serif;
+  color: #333;
+}
+
+/* Navbar customization */
+/* Top Navbar override */
+/* Force navbar background and text color overrides for themes like 'minty' */
+.navbar {
+  background-color: #1a1a1a !important;   /* Change this to your preferred color */
+  border-bottom: 3px solid #2f6a88 !important; /* Optional: green accent line */
+}
+
+.navbar .navbar-brand,
+.navbar-default .navbar-nav > li > a {
+  color: #040202 !important;
+  font-weight: bold;
+}
+
+.navbar-default .navbar-nav > li > a:hover,
+.navbar-default .navbar-nav > li.active > a {
+  color: #245269 !important; /* Accent on hover or active */
+}
+
+
+
+/* Card enhancements */
+.card {
+  background-color: #ffffff;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  margin-bottom: 20px;
+}
+
+/* Headings */
+h1, h2, h3, h4 {
+  color: #245269;
+  font-weight: 600;
+}
+
+/* Ticker bar */
+#ticker {
+  background: linear-gradient(90deg, #78797a, #acaeb0);
+  color: #fff;
+  font-size: 16px;
+  padding: 10px;
+  border-radius: 6px;
+  margin-bottom: 20px;
+}
+
+/* Table styling */
+.reactable {
+  background-color: #ffffff;
+  border: 1px solid #ccc;
+  border-radius: 10px;
+}
+
+/* News table */
+.dataTable {
+  font-size: 14px;
+}
+
+/* Scrollbar smoothing */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-thumb {
+  background-color: #888;
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background-color: #555;
+}
+
+/* Buttons and inputs */
+.btn, .form-control, .selectpicker {
+  border-radius: 8px !important;
+}

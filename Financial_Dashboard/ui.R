@@ -1,6 +1,7 @@
 navbarPage(
-  "My Dashboard",
+  "Financial Dashboard",
   theme = bs_theme(bootswatch = "minty"),
+  tags$link(rel = "stylesheet", type = "text/css", href = "custom.css"),
   
   tags$style(HTML("
     body, .container-fluid, .navbar, .well {
@@ -8,12 +9,13 @@ navbarPage(
     }
   ")),
   
-  # ---------------- Dashboard Tab ---------------- #
-  tabPanel("Dashboard",
+  # ---------------- Stock Prices Tab ---------------- #
+  tabPanel("Stock Prices",
+           
            div(
              style = "display: flex; align-items: center;",
              
-             h1("Financial Data", style = "margin-right: 15px;"),
+             h1("Stock Prices", style = "margin-right: 15px;"),
              
              tags$img(
                src = "financial-profit.png",
@@ -33,8 +35,8 @@ navbarPage(
                # ✅ All six panels and gauge inside sidebar
                card(h4(textOutput("text5")), uiOutput("Plot5")),
                card(
-                 style = "height: 430px;",
-                 h4("Should you invest?"),
+                 style = "height: 460px;",
+                 h4(textOutput("textGauge")),
                  div(style = "overflow: hidden; height: 220px",
                      div(style = "transform: scale(2); transform-origin: top ;",
                          gaugeOutput("investmentGauge")
@@ -48,7 +50,7 @@ navbarPage(
              mainPanel(
                width = 7,
                card(
-                 style = "height: 750px;",
+                 style = "height: 825px;",
                  h3(textOutput("title_candle")),
                  materialSwitch(inputId = "show_averages", label = "show averages", value = TRUE),
                  plotlyOutput("candlePlot3"),  # ✅ Candle plot in main panel
@@ -81,7 +83,7 @@ navbarPage(
            div(
              style = "display: flex; align-items: center;",
              
-             h1("Financial Data", style = "margin-right: 15px;"),
+             h1("Market Overview", style = "margin-right: 15px;"),
              
              tags$img(
                src = "financial-profit.png",
@@ -139,7 +141,7 @@ navbarPage(
                  style = "height: 670px; overflow-y: hidden; overflow-x: hidden;",
                  h3("Economic News Headlines"),
                  div(
-                   style = "height: 570px; overflow-y: hidden; overflow-x: hidden;",  
+                   style = "height: 530px; overflow-y: hidden; overflow-x: hidden;",  
                    DTOutput("news_table")
                  )
                )
