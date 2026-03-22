@@ -7,4 +7,4 @@ deployed dashboard can be found here(might take a minute to start up):
 
 ## help
 - if data does not load -> try refreshing the page
-- if just want to see how the page looks -> check preview folder in repository
+- if just want to see how the page looks -> check ```preview``` folder in repository
